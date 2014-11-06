@@ -66,12 +66,15 @@ void Runner::run()
             addToQueue(args);
         }
     }
+    //If below condition is true it means we don't have any task to complete in the first place
     if (commandArgs.isEmpty())
         QTimer::singleShot(0, this, SIGNAL(finished()));
 }
 
 void Runner::addToQueue(QStringList& stringList)
 {
+    //Note that runNextCommand executed after addToQueue finished. In other words, It executed when
+    //event loop gains control that is when addToQueue and run methods finished
     if (commandArgs.isEmpty())
         QTimer::singleShot(0, this, SLOT(runNextCommand()));
     commandArgs.enqueue(stringList);
@@ -85,6 +88,7 @@ void Runner::runNextCommand()
         QString message("%1/%2 tasks completed successfully");
         message = message.arg(completedTasks).arg(totalTasks);
         qCout << message << endl;
+        //Notify event loop that we've finished our tasks
         emit finished();
         return;
     }
@@ -104,5 +108,7 @@ void Runner::commandFinished(int exitCode, QProcess::ExitStatus exitStatus)
     }
     else
         ++completedTasks;
+    //We immediately call runNextCommand (without QTimer::singleShot) so we don't let event loop
+    //gains control. It's obvious after runNextCommand finished, it gains control
     runNextCommand();
 }
